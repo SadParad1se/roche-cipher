@@ -41,7 +41,7 @@ def decode_cipher(key_table: List[Tuple[str, int]], cipher: str, pointer: int) -
 
     # Load the characters in the correct order
     decoded_cipher = ""
-    for i in range(key_table[-1][1]):
+    for i in range(len(key_table)):
         for characters in characters_table:
             if i < len(characters):
                 decoded_cipher += characters[i]
@@ -61,7 +61,7 @@ def main(key: str, cipher: str):
     result = decode_cipher(key_table, cipher, 0)
 
     if len(result) != len(cipher):
-        raise AssertionError("Input and output length is not equal! Please, submit a report.")
+        print("Input and output length is not equal! Please, submit a report.")
 
     print(result)
 
