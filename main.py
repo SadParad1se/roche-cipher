@@ -1,69 +1,78 @@
 import argparse
 import string
+from typing import List, Tuple
 
 
-def decode(password, to_decode, pointer=0):
-    if pointer >= len(to_decode):
-        return ""
+def create_key_table(key: str) -> List[Tuple[str, int]]:
+    """
+    Create an ordered key table.
+    :param key: A word used for decoding
+    :return: Key table
+    """
+    ordered_key = {}
+    order = 1
+    for letter in string.ascii_lowercase:
+        for i in range(len(key)):
+            if key[i] == letter:
+                ordered_key[i] = (key[i], order)
+                order += 1
 
-    letters = string.ascii_lowercase
+    return [ordered_key[i] for i in range(len(ordered_key))]
 
-    key = {}
 
-    print(f"cipher len: {len(to_decode)}")
-
-    current_id = 1
-    for letter in letters:
-        for i in range(len(password)):
-            if password[i] == letter:
-                key[i] = (password[i], current_id)
-                current_id += 1
-
-    sorted_key = []
-    for i in range(len(key)):
-        sorted_key.append(key[i])
-
-    total_key_value = 0
-    for sk in sorted_key:
-        total_key_value += sk[1]
-
-    print(f"total key value: {total_key_value}")
-    print(f"fraction check: {len(to_decode) / total_key_value}")
-    print(sorted_key)
-
-    varchar_l = []
-    for s_key in sorted_key:
-        length = s_key[1]
-        varchar = ""
+def decode_cipher(key_table: List[Tuple[str, int]], cipher: str, pointer: int) -> str:
+    """
+    Decode the cipher using the key table.
+    :param key_table: Table with the key used for decoding
+    :param cipher: Encoded text
+    :param pointer: How much of the text have we translated
+    :return: Decoded text
+    """
+    # First, create a table according to the key table
+    characters_table = []
+    for key in key_table:
+        length = key[1]
+        characters = ""
         for i in range(length):
-            varchar += to_decode[i + pointer]
+            characters += cipher[i + pointer]
+
+        characters_table.append(characters)
         pointer += length
-        varchar_l.append(varchar)
-        print(f"{varchar}")
 
-    de_cipher = ""
-    for i in range(current_id):
-        for vl in varchar_l:
-            try:
-                de_cipher += vl[i]
-            except IndexError:
-                pass
+    # Load the characters in the correct order
+    decoded_cipher = ""
+    for i in range(key_table[-1][1]):
+        for characters in characters_table:
+            if i < len(characters):
+                decoded_cipher += characters[i]
 
-    return de_cipher + decode(password, to_decode, pointer)
+    # If we still haven't decoded the cipher, continue
+    return decoded_cipher + (decode_cipher(key_table, cipher, pointer) if pointer < len(cipher) else "")
+
+
+def main(key: str, cipher: str):
+    """
+    Generate key table and decode the cipher with it.
+    :param key: Key to decode the text
+    :param cipher: Encoded text
+    :return: None
+    """
+    key_table = create_key_table(key.lower())
+    result = decode_cipher(key_table, cipher, 0)
+
+    if len(result) != len(cipher):
+        raise AssertionError("Input and output length is not equal! Please, submit a report.")
+
+    print(result)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("passkey")
-    parser.add_argument("cipher")
+    parser = argparse.ArgumentParser(
+        "Roche cipher decoder",
+        description="Insert the key and the encoded text you want to decode."
+    )
+    parser.add_argument("key")
+    parser.add_argument("text")
     args = parser.parse_args()
 
-    passkey = args.passkey
-    cipher = args.cipher
-
-    result = decode(passkey, cipher)
-
-    if len(result) == len(cipher):
-        print("Input is equally long as the output")
-
-    print(result)
+    main(args.key, args.text)
